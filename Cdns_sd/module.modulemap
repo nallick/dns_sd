@@ -1,0 +1,5 @@
+module Cdns_sd [system] {
+  header "/usr/include/dns_sd.h"
+  link "dns_sd"
+  export *
+}
