@@ -1,11 +1,16 @@
 //
 //  Register.swift
 //
-//  Copyright © 2019 Purgatory Design. Licensed under the MIT License.
+//  Copyright © 2019, 2024 Purgatory Design. Licensed under the MIT License.
 //
 
-import Cdns_sd
 import Foundation
+
+#if os(Linux)
+import Cdns_sd
+#else
+import dnssd
+#endif
 
 extension DNSService {
 

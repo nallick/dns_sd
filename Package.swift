@@ -2,6 +2,12 @@
 
 import PackageDescription
 
+#if os(Linux)
+let platformDependencies: [PackageDescription.Target.Dependency] = ["Cdns_sd"]
+#else
+let platformDependencies: [PackageDescription.Target.Dependency] = []
+#endif
+
 let package = Package(
     name: "dns_sd",
     products: [
@@ -20,7 +26,7 @@ let package = Package(
             ]),
         .target(
             name: "dns_sd",
-            dependencies: ["Cdns_sd"]),
+            dependencies: platformDependencies),
         .testTarget(
             name: "dns_sdTests",
             dependencies: ["dns_sd"]),

@@ -1,11 +1,16 @@
 //
 //  Flags.swift
 //
-//  Copyright © 2019 Purgatory Design. Licensed under the MIT License.
+//  Copyright © 2019, 2024 Purgatory Design. Licensed under the MIT License.
 //
 
-import Cdns_sd
 import Foundation
+
+#if os(Linux)
+import Cdns_sd
+#else
+import dnssd
+#endif
 
 extension DNSService {
 
@@ -27,7 +32,11 @@ extension DNSService {
         public static let longLivedQuery       = Flags(rawValue: DNSServiceFlags(kDNSServiceFlagsLongLivedQuery))
         public static let allowRemoteQuery     = Flags(rawValue: DNSServiceFlags(kDNSServiceFlagsAllowRemoteQuery))
         public static let forceMulticast       = Flags(rawValue: DNSServiceFlags(kDNSServiceFlagsForceMulticast))
+#if os(Linux)
         public static let returnCNAME          = Flags(rawValue: DNSServiceFlags(kDNSServiceFlagsReturnCNAME))
+#else
+        public static let returnCNAME          = Flags(rawValue: DNSServiceFlags(kDNSServiceFlagsReturnIntermediates))
+#endif
     }
 
     public enum ServiceClass: UInt16 {
