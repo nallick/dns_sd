@@ -42,7 +42,7 @@ internal enum FD {
         let intOffset = Int(fd / 16)
         let bitOffset = Int(fd % 16)
         #endif
-        let mask = Int(1 << bitOffset)
+        let mask = Int(1 &<< bitOffset)
         switch intOffset {
             case 0: set.__fds_bits.0 = set.__fds_bits.0 | mask
             case 1: set.__fds_bits.1 = set.__fds_bits.1 | mask
@@ -98,7 +98,7 @@ internal enum FD {
         let intOffset = Int(fd / 16)
         let bitOffset = Int(fd % 16)
         #endif
-        let mask = Int(~(1 << bitOffset))
+        let mask = Int(~(1 &<<bitOffset))
         switch intOffset {
             case 0: set.__fds_bits.0 = set.__fds_bits.0 & mask
             case 1: set.__fds_bits.1 = set.__fds_bits.1 & mask
@@ -154,7 +154,7 @@ internal enum FD {
         let intOffset = Int(fd / 16)
         let bitOffset = Int(fd % 16)
         #endif
-        let mask = Int(1 << bitOffset)
+        let mask = Int(1 &<< bitOffset)
         switch intOffset {
             case 0: return set.__fds_bits.0 & mask != 0
             case 1: return set.__fds_bits.1 & mask != 0
@@ -224,7 +224,7 @@ internal enum FD {
         let intOffset = Int(fd / 16)
         let bitOffset = Int(fd % 16)
         #endif
-        let mask = Int32(1 << bitOffset)
+        let mask = Int32(1 &<< bitOffset)
         switch intOffset {
             case 0: set.fds_bits.0 = set.fds_bits.0 | mask
             case 1: set.fds_bits.1 = set.fds_bits.1 | mask
@@ -280,7 +280,7 @@ internal enum FD {
         let intOffset = Int(fd / 16)
         let bitOffset = Int(fd % 16)
         #endif
-        let mask = Int32(~(1 << bitOffset))
+        let mask = Int32(~(1 &<< bitOffset))
         switch intOffset {
             case 0: set.fds_bits.0 = set.fds_bits.0 & mask
             case 1: set.fds_bits.1 = set.fds_bits.1 & mask
@@ -336,7 +336,7 @@ internal enum FD {
         let intOffset = Int(fd / 16)
         let bitOffset = Int(fd % 16)
         #endif
-        let mask = Int32(1 << bitOffset)
+        let mask = Int32(1 &<< bitOffset)
         switch intOffset {
             case 0: return set.fds_bits.0 & mask != 0
             case 1: return set.fds_bits.1 & mask != 0
