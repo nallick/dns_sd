@@ -1,87 +1,44 @@
 //
 //  FD.swift
 //
-//  Derived from: http://swiftrien.blogspot.com/2015/11/swift-code-library-replacements-for.html
+//  The C structure fd_set is an OS system defined bit field containing FD_SETSIZE (e.g. 1024) bits.
+//  In C, this is implemented as a fixed size array of integers which Swift interprets as a tuple.
+//  Unfortunately various Linux distributions (as well as Darwin) vary regarding integer size and count.
+//  This means the number of tuple elements Swift imports from C varies from platform to platform.
+//  Platform C headers define C macros to perform bitfield functions on fd_set. This file provides those as Swift functions.
+//  Previous versions of this file have reimplemented the macros in pure Swift, but since Swift doesn't allow compile-time
+//  variations to account for the number of elements in the fd_set tuple, this solution isn't portable.
+//  The portable solution used here calls the platform's C macros through C language wrapper functions visible to Swift.
+//
+//  Copyright © 2024 Purgatory Design. Licensed under the MIT License.
 //
 
+import Cfdset
 import Foundation
 
 internal enum FD {
 
-#if os(Linux)
-
     /// Replacement for FD_ZERO macro.
     ///
     /// - Parameter set: A pointer to a fd_set structure.
     ///
-    /// - Returns: The set that is opinted at is filled with all zero's.
+    /// - Returns: The set that is pointed at is filled with all zero's.
     ///
-    internal static func zero(_ set: inout fd_set) {
-#if arch(arm) // 32 tuple elements
-        set.__fds_bits = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-#else // 16 tuple elements
-        set.__fds_bits = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-#endif
+    @inlinable internal static func zero(_ set: UnsafeMutablePointer<fd_set>) {
+        InvokeMacro_FD_ZERO(set)
     }
 
     /// Replacement for FD_SET macro.
     ///
-    /// - Parameter fd: fd: A file descriptor that offsets the bit to be set to 1 in the fd_set pointed at by 'set'.
+    /// - Parameter fd: A file descriptor that offsets the bit to be set to 1 in the fd_set pointed at by 'set'.
     /// - Parameter set: A pointer to a fd_set structure.
     ///
     /// - Returns: The given set is updated in place, with the bit at offset 'fd' set to 1.
     ///
     /// - Note: If you receive an EXC_BAD_INSTRUCTION at the mask statement, then most likely the socket was already closed.
     ///
-    internal static func set(_ fd: Int32, set: inout fd_set) {
-        // see https://github.com/Kitura/BlueSocket/issues/10
-#if arch(arm)
-        let tupleElementCount = 32
-#else
-        let tupleElementCount = 16
-#endif
-        let fdsMaskBitCount = 8 * MemoryLayout<fd_set>.size / tupleElementCount
-
-        let intOffset = Int(fd) / fdsMaskBitCount
-        let bitOffset = Int(fd) % fdsMaskBitCount
-        let mask = 1 &<< bitOffset
-        switch intOffset {
-            case 0: set.__fds_bits.0 = set.__fds_bits.0 | mask
-            case 1: set.__fds_bits.1 = set.__fds_bits.1 | mask
-            case 2: set.__fds_bits.2 = set.__fds_bits.2 | mask
-            case 3: set.__fds_bits.3 = set.__fds_bits.3 | mask
-            case 4: set.__fds_bits.4 = set.__fds_bits.4 | mask
-            case 5: set.__fds_bits.5 = set.__fds_bits.5 | mask
-            case 6: set.__fds_bits.6 = set.__fds_bits.6 | mask
-            case 7: set.__fds_bits.7 = set.__fds_bits.7 | mask
-            case 8: set.__fds_bits.8 = set.__fds_bits.8 | mask
-            case 9: set.__fds_bits.9 = set.__fds_bits.9 | mask
-            case 10: set.__fds_bits.10 = set.__fds_bits.10 | mask
-            case 11: set.__fds_bits.11 = set.__fds_bits.11 | mask
-            case 12: set.__fds_bits.12 = set.__fds_bits.12 | mask
-            case 13: set.__fds_bits.13 = set.__fds_bits.13 | mask
-            case 14: set.__fds_bits.14 = set.__fds_bits.14 | mask
-            case 15: set.__fds_bits.15 = set.__fds_bits.15 | mask
-#if arch(arm) // 32 tuple elements
-            case 16: set.__fds_bits.16 = set.__fds_bits.16 | mask
-            case 17: set.__fds_bits.17 = set.__fds_bits.17 | mask
-            case 18: set.__fds_bits.18 = set.__fds_bits.18 | mask
-            case 19: set.__fds_bits.19 = set.__fds_bits.19 | mask
-            case 20: set.__fds_bits.20 = set.__fds_bits.20 | mask
-            case 21: set.__fds_bits.21 = set.__fds_bits.21 | mask
-            case 22: set.__fds_bits.22 = set.__fds_bits.22 | mask
-            case 23: set.__fds_bits.23 = set.__fds_bits.23 | mask
-            case 24: set.__fds_bits.24 = set.__fds_bits.24 | mask
-            case 25: set.__fds_bits.25 = set.__fds_bits.25 | mask
-            case 26: set.__fds_bits.26 = set.__fds_bits.26 | mask
-            case 27: set.__fds_bits.27 = set.__fds_bits.27 | mask
-            case 28: set.__fds_bits.28 = set.__fds_bits.28 | mask
-            case 29: set.__fds_bits.29 = set.__fds_bits.29 | mask
-            case 30: set.__fds_bits.30 = set.__fds_bits.30 | mask
-            case 31: set.__fds_bits.31 = set.__fds_bits.31 | mask
-#endif
-            default: break
-        }
+    @inlinable internal static func set(_ fd: Int32, set: UnsafeMutablePointer<fd_set>) {
+        InvokeMacro_FD_SET(fd, set)
     }
 
     /// Replacement for FD_CLR macro.
@@ -91,55 +48,8 @@ internal enum FD {
     ///
     /// - Returns: The given set is updated in place, with the bit at offset 'fd' cleared to 0.
     ///
-    internal static func clr(_ fd: Int32, set: inout fd_set) {
-        // see https://github.com/Kitura/BlueSocket/issues/10
-#if arch(arm)
-        let tupleElementCount = 32
-#else
-        let tupleElementCount = 16
-#endif
-        let fdsMaskBitCount = 8 * MemoryLayout<fd_set>.size / tupleElementCount
-
-        let intOffset = Int(fd) / fdsMaskBitCount
-        let bitOffset = Int(fd) % fdsMaskBitCount
-        let mask = ~(1 &<< bitOffset)
-        switch intOffset {
-            case 0: set.__fds_bits.0 = set.__fds_bits.0 & mask
-            case 1: set.__fds_bits.1 = set.__fds_bits.1 & mask
-            case 2: set.__fds_bits.2 = set.__fds_bits.2 & mask
-            case 3: set.__fds_bits.3 = set.__fds_bits.3 & mask
-            case 4: set.__fds_bits.4 = set.__fds_bits.4 & mask
-            case 5: set.__fds_bits.5 = set.__fds_bits.5 & mask
-            case 6: set.__fds_bits.6 = set.__fds_bits.6 & mask
-            case 7: set.__fds_bits.7 = set.__fds_bits.7 & mask
-            case 8: set.__fds_bits.8 = set.__fds_bits.8 & mask
-            case 9: set.__fds_bits.9 = set.__fds_bits.9 & mask
-            case 10: set.__fds_bits.10 = set.__fds_bits.10 & mask
-            case 11: set.__fds_bits.11 = set.__fds_bits.11 & mask
-            case 12: set.__fds_bits.12 = set.__fds_bits.12 & mask
-            case 13: set.__fds_bits.13 = set.__fds_bits.13 & mask
-            case 14: set.__fds_bits.14 = set.__fds_bits.14 & mask
-            case 15: set.__fds_bits.15 = set.__fds_bits.15 & mask
-#if arch(arm) // 32 tuple elements
-            case 16: set.__fds_bits.16 = set.__fds_bits.16 & mask
-            case 17: set.__fds_bits.17 = set.__fds_bits.17 & mask
-            case 18: set.__fds_bits.18 = set.__fds_bits.18 & mask
-            case 19: set.__fds_bits.19 = set.__fds_bits.19 & mask
-            case 20: set.__fds_bits.20 = set.__fds_bits.20 & mask
-            case 21: set.__fds_bits.21 = set.__fds_bits.21 & mask
-            case 22: set.__fds_bits.22 = set.__fds_bits.22 & mask
-            case 23: set.__fds_bits.23 = set.__fds_bits.23 & mask
-            case 24: set.__fds_bits.24 = set.__fds_bits.24 & mask
-            case 25: set.__fds_bits.25 = set.__fds_bits.25 & mask
-            case 26: set.__fds_bits.26 = set.__fds_bits.26 & mask
-            case 27: set.__fds_bits.27 = set.__fds_bits.27 & mask
-            case 28: set.__fds_bits.28 = set.__fds_bits.28 & mask
-            case 29: set.__fds_bits.29 = set.__fds_bits.29 & mask
-            case 30: set.__fds_bits.30 = set.__fds_bits.30 & mask
-            case 31: set.__fds_bits.31 = set.__fds_bits.31 & mask
-#endif
-            default: break
-        }
+    @inlinable internal static func clr(_ fd: Int32, set: UnsafeMutablePointer<fd_set>) {
+        InvokeMacro_FD_CLR(fd, set)
     }
 
     /// Replacement for FD_ISSET macro.
@@ -149,224 +59,7 @@ internal enum FD {
     ///
     /// - Returns: 'true' if the bit at offset 'fd' is 1, 'false' otherwise.
     ///
-    internal static func isSet(_ fd: Int32, set: inout fd_set) -> Bool {
-        // see https://github.com/Kitura/BlueSocket/issues/10
-#if arch(arm)
-        let tupleElementCount = 32
-#else
-        let tupleElementCount = 16
-#endif
-        let fdsMaskBitCount = 8 * MemoryLayout<fd_set>.size / tupleElementCount
-
-        let intOffset = Int(fd) / fdsMaskBitCount
-        let bitOffset = Int(fd) % fdsMaskBitCount
-        let mask = 1 &<< bitOffset
-        switch intOffset {
-            case 0: return set.__fds_bits.0 & mask != 0
-            case 1: return set.__fds_bits.1 & mask != 0
-            case 2: return set.__fds_bits.2 & mask != 0
-            case 3: return set.__fds_bits.3 & mask != 0
-            case 4: return set.__fds_bits.4 & mask != 0
-            case 5: return set.__fds_bits.5 & mask != 0
-            case 6: return set.__fds_bits.6 & mask != 0
-            case 7: return set.__fds_bits.7 & mask != 0
-            case 8: return set.__fds_bits.8 & mask != 0
-            case 9: return set.__fds_bits.9 & mask != 0
-            case 10: return set.__fds_bits.10 & mask != 0
-            case 11: return set.__fds_bits.11 & mask != 0
-            case 12: return set.__fds_bits.12 & mask != 0
-            case 13: return set.__fds_bits.13 & mask != 0
-            case 14: return set.__fds_bits.14 & mask != 0
-            case 15: return set.__fds_bits.15 & mask != 0
-#if arch(arm) // 32 tuple elements
-            case 16: return set.__fds_bits.16 & mask != 0
-            case 17: return set.__fds_bits.17 & mask != 0
-            case 18: return set.__fds_bits.18 & mask != 0
-            case 19: return set.__fds_bits.19 & mask != 0
-            case 20: return set.__fds_bits.20 & mask != 0
-            case 21: return set.__fds_bits.21 & mask != 0
-            case 22: return set.__fds_bits.22 & mask != 0
-            case 23: return set.__fds_bits.23 & mask != 0
-            case 24: return set.__fds_bits.24 & mask != 0
-            case 25: return set.__fds_bits.25 & mask != 0
-            case 26: return set.__fds_bits.26 & mask != 0
-            case 27: return set.__fds_bits.27 & mask != 0
-            case 28: return set.__fds_bits.28 & mask != 0
-            case 29: return set.__fds_bits.29 & mask != 0
-            case 30: return set.__fds_bits.30 & mask != 0
-            case 31: return set.__fds_bits.31 & mask != 0
-#endif
-            default: return false
-        }
+    @inlinable internal static func isSet(_ fd: Int32, set: UnsafePointer<fd_set>) -> Bool {
+        return InvokeMacro_FD_ISSET(fd, set) != 0
     }
-
-#else   // Darwin
-
-    /// Replacement for FD_ZERO macro.
-    ///
-    /// - Parameter set: A pointer to a fd_set structure.
-    ///
-    /// - Returns: The set that is opinted at is filled with all zero's.
-    ///
-    internal static func zero(_ set: inout fd_set) {
-        set.fds_bits = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-    }
-
-    /// Replacement for FD_SET macro.
-    ///
-    /// - Parameter fd: fd: A file descriptor that offsets the bit to be set to 1 in the fd_set pointed at by 'set'.
-    /// - Parameter set: A pointer to a fd_set structure.
-    ///
-    /// - Returns: The given set is updated in place, with the bit at offset 'fd' set to 1.
-    ///
-    /// - Note: If you receive an EXC_BAD_INSTRUCTION at the mask statement, then most likely the socket was already closed.
-    ///
-    internal static func set(_ fd: Int32, set: inout fd_set) {
-        let tupleElementCount = 32
-        let fdsMaskBitCount = 8 * MemoryLayout<fd_set>.size / tupleElementCount
-
-        let intOffset = Int(fd) / fdsMaskBitCount
-        let bitOffset = Int(fd) % fdsMaskBitCount
-        let mask = Int32(1) &<< bitOffset
-        switch intOffset {
-            case 0: set.fds_bits.0 = set.fds_bits.0 | mask
-            case 1: set.fds_bits.1 = set.fds_bits.1 | mask
-            case 2: set.fds_bits.2 = set.fds_bits.2 | mask
-            case 3: set.fds_bits.3 = set.fds_bits.3 | mask
-            case 4: set.fds_bits.4 = set.fds_bits.4 | mask
-            case 5: set.fds_bits.5 = set.fds_bits.5 | mask
-            case 6: set.fds_bits.6 = set.fds_bits.6 | mask
-            case 7: set.fds_bits.7 = set.fds_bits.7 | mask
-            case 8: set.fds_bits.8 = set.fds_bits.8 | mask
-            case 9: set.fds_bits.9 = set.fds_bits.9 | mask
-            case 10: set.fds_bits.10 = set.fds_bits.10 | mask
-            case 11: set.fds_bits.11 = set.fds_bits.11 | mask
-            case 12: set.fds_bits.12 = set.fds_bits.12 | mask
-            case 13: set.fds_bits.13 = set.fds_bits.13 | mask
-            case 14: set.fds_bits.14 = set.fds_bits.14 | mask
-            case 15: set.fds_bits.15 = set.fds_bits.15 | mask
-            case 16: set.fds_bits.16 = set.fds_bits.16 | mask
-            case 17: set.fds_bits.17 = set.fds_bits.17 | mask
-            case 18: set.fds_bits.18 = set.fds_bits.18 | mask
-            case 19: set.fds_bits.19 = set.fds_bits.19 | mask
-            case 20: set.fds_bits.20 = set.fds_bits.20 | mask
-            case 21: set.fds_bits.21 = set.fds_bits.21 | mask
-            case 22: set.fds_bits.22 = set.fds_bits.22 | mask
-            case 23: set.fds_bits.23 = set.fds_bits.23 | mask
-            case 24: set.fds_bits.24 = set.fds_bits.24 | mask
-            case 25: set.fds_bits.25 = set.fds_bits.25 | mask
-            case 26: set.fds_bits.26 = set.fds_bits.26 | mask
-            case 27: set.fds_bits.27 = set.fds_bits.27 | mask
-            case 28: set.fds_bits.28 = set.fds_bits.28 | mask
-            case 29: set.fds_bits.29 = set.fds_bits.29 | mask
-            case 30: set.fds_bits.30 = set.fds_bits.30 | mask
-            case 31: set.fds_bits.31 = set.fds_bits.31 | mask
-            default: break
-        }
-    }
-
-    /// Replacement for FD_CLR macro.
-    ///
-    /// - Parameter fd: A file descriptor that offsets the bit to be cleared in the fd_set pointed at by 'set'.
-    /// - Parameter set: A pointer to a fd_set structure.
-    ///
-    /// - Returns: The given set is updated in place, with the bit at offset 'fd' cleared to 0.
-    ///
-    internal static func clr(_ fd: Int32, set: inout fd_set) {
-        let tupleElementCount = 32
-        let fdsMaskBitCount = 8 * MemoryLayout<fd_set>.size / tupleElementCount
-
-        let intOffset = Int(fd) / fdsMaskBitCount
-        let bitOffset = Int(fd) % fdsMaskBitCount
-        let mask = ~(Int32(1) &<< bitOffset)
-        switch intOffset {
-            case 0: set.fds_bits.0 = set.fds_bits.0 & mask
-            case 1: set.fds_bits.1 = set.fds_bits.1 & mask
-            case 2: set.fds_bits.2 = set.fds_bits.2 & mask
-            case 3: set.fds_bits.3 = set.fds_bits.3 & mask
-            case 4: set.fds_bits.4 = set.fds_bits.4 & mask
-            case 5: set.fds_bits.5 = set.fds_bits.5 & mask
-            case 6: set.fds_bits.6 = set.fds_bits.6 & mask
-            case 7: set.fds_bits.7 = set.fds_bits.7 & mask
-            case 8: set.fds_bits.8 = set.fds_bits.8 & mask
-            case 9: set.fds_bits.9 = set.fds_bits.9 & mask
-            case 10: set.fds_bits.10 = set.fds_bits.10 & mask
-            case 11: set.fds_bits.11 = set.fds_bits.11 & mask
-            case 12: set.fds_bits.12 = set.fds_bits.12 & mask
-            case 13: set.fds_bits.13 = set.fds_bits.13 & mask
-            case 14: set.fds_bits.14 = set.fds_bits.14 & mask
-            case 15: set.fds_bits.15 = set.fds_bits.15 & mask
-            case 16: set.fds_bits.16 = set.fds_bits.16 & mask
-            case 17: set.fds_bits.17 = set.fds_bits.17 & mask
-            case 18: set.fds_bits.18 = set.fds_bits.18 & mask
-            case 19: set.fds_bits.19 = set.fds_bits.19 & mask
-            case 20: set.fds_bits.20 = set.fds_bits.20 & mask
-            case 21: set.fds_bits.21 = set.fds_bits.21 & mask
-            case 22: set.fds_bits.22 = set.fds_bits.22 & mask
-            case 23: set.fds_bits.23 = set.fds_bits.23 & mask
-            case 24: set.fds_bits.24 = set.fds_bits.24 & mask
-            case 25: set.fds_bits.25 = set.fds_bits.25 & mask
-            case 26: set.fds_bits.26 = set.fds_bits.26 & mask
-            case 27: set.fds_bits.27 = set.fds_bits.27 & mask
-            case 28: set.fds_bits.28 = set.fds_bits.28 & mask
-            case 29: set.fds_bits.29 = set.fds_bits.29 & mask
-            case 30: set.fds_bits.30 = set.fds_bits.30 & mask
-            case 31: set.fds_bits.31 = set.fds_bits.31 & mask
-            default: break
-        }
-    }
-
-    /// Replacement for FD_ISSET macro.
-    ///
-    /// - Parameter fd: A file descriptor that offsets the bit to be tested in the fd_set pointed at by 'set'.
-    /// - Parameter set: A pointer to a fd_set structure.
-    ///
-    /// - Returns: 'true' if the bit at offset 'fd' is 1, 'false' otherwise.
-    ///
-    internal static func isSet(_ fd: Int32, set: inout fd_set) -> Bool {
-        let tupleElementCount = 32
-        let fdsMaskBitCount = 8 * MemoryLayout<fd_set>.size / tupleElementCount
-
-        let intOffset = Int(fd) / fdsMaskBitCount
-        let bitOffset = Int(fd) % fdsMaskBitCount
-        let mask = Int32(1) &<< bitOffset
-        switch intOffset {
-            case 0: return set.fds_bits.0 & mask != 0
-            case 1: return set.fds_bits.1 & mask != 0
-            case 2: return set.fds_bits.2 & mask != 0
-            case 3: return set.fds_bits.3 & mask != 0
-            case 4: return set.fds_bits.4 & mask != 0
-            case 5: return set.fds_bits.5 & mask != 0
-            case 6: return set.fds_bits.6 & mask != 0
-            case 7: return set.fds_bits.7 & mask != 0
-            case 8: return set.fds_bits.8 & mask != 0
-            case 9: return set.fds_bits.9 & mask != 0
-            case 10: return set.fds_bits.10 & mask != 0
-            case 11: return set.fds_bits.11 & mask != 0
-            case 12: return set.fds_bits.12 & mask != 0
-            case 13: return set.fds_bits.13 & mask != 0
-            case 14: return set.fds_bits.14 & mask != 0
-            case 15: return set.fds_bits.15 & mask != 0
-            case 16: return set.fds_bits.16 & mask != 0
-            case 17: return set.fds_bits.17 & mask != 0
-            case 18: return set.fds_bits.18 & mask != 0
-            case 19: return set.fds_bits.19 & mask != 0
-            case 20: return set.fds_bits.20 & mask != 0
-            case 21: return set.fds_bits.21 & mask != 0
-            case 22: return set.fds_bits.22 & mask != 0
-            case 23: return set.fds_bits.23 & mask != 0
-            case 24: return set.fds_bits.24 & mask != 0
-            case 25: return set.fds_bits.25 & mask != 0
-            case 26: return set.fds_bits.26 & mask != 0
-            case 27: return set.fds_bits.27 & mask != 0
-            case 28: return set.fds_bits.28 & mask != 0
-            case 29: return set.fds_bits.29 & mask != 0
-            case 30: return set.fds_bits.30 & mask != 0
-            case 31: return set.fds_bits.31 & mask != 0
-            default: return false
-        }
-    }
-
-#endif
-
 }

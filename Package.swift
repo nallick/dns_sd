@@ -3,9 +3,9 @@
 import PackageDescription
 
 #if os(Linux)
-let platformDependencies: [PackageDescription.Target.Dependency] = ["Cdns_sd"]
+let platformDependencies: [PackageDescription.Target.Dependency] = ["Cdns_sd", "Cfdset"]
 #else
-let platformDependencies: [PackageDescription.Target.Dependency] = []
+let platformDependencies: [PackageDescription.Target.Dependency] = ["Cfdset"]
 #endif
 
 let package = Package(
@@ -25,8 +25,13 @@ let package = Package(
                 .apt(["libavahi-compat-libdnssd-dev"]),
             ]),
         .target(
+            name: "Cfdset",
+            dependencies: [],
+            path: "Cfdset"),
+        .target(
             name: "dns_sd",
-            dependencies: platformDependencies),
+            dependencies: platformDependencies,
+            path: "Sources"),
         .testTarget(
             name: "dns_sdTests",
             dependencies: ["dns_sd"]),
