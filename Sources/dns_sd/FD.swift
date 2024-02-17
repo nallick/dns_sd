@@ -17,11 +17,11 @@ internal enum FD {
     /// - Returns: The set that is opinted at is filled with all zero's.
     ///
     internal static func zero(_ set: inout fd_set) {
-        #if arch(arm) // 32 bits
+#if arch(arm) // 32 tuple elements
         set.__fds_bits = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-        #else // 16 bits
+#else // 16 tuple elements
         set.__fds_bits = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-        #endif
+#endif
     }
 
     /// Replacement for FD_SET macro.
@@ -35,14 +35,16 @@ internal enum FD {
     ///
     internal static func set(_ fd: Int32, set: inout fd_set) {
         // see https://github.com/Kitura/BlueSocket/issues/10
-        #if arch(arm) // 32 bits
-        let intOffset = Int(fd / 32)
-        let bitOffset = Int(fd % 32)
-        #else // 16 bits
-        let intOffset = Int(fd / 16)
-        let bitOffset = Int(fd % 16)
-        #endif
-        let mask = Int(1 &<< bitOffset)
+#if arch(arm)
+        let tupleElementCount = 32
+#else
+        let tupleElementCount = 16
+#endif
+        let fdsMaskBitCount = 8 * MemoryLayout<fd_set>.size / tupleElementCount
+
+        let intOffset = Int(fd) / fdsMaskBitCount
+        let bitOffset = Int(fd) % fdsMaskBitCount
+        let mask = 1 &<< bitOffset
         switch intOffset {
             case 0: set.__fds_bits.0 = set.__fds_bits.0 | mask
             case 1: set.__fds_bits.1 = set.__fds_bits.1 | mask
@@ -60,7 +62,7 @@ internal enum FD {
             case 13: set.__fds_bits.13 = set.__fds_bits.13 | mask
             case 14: set.__fds_bits.14 = set.__fds_bits.14 | mask
             case 15: set.__fds_bits.15 = set.__fds_bits.15 | mask
-            #if arch(arm) // 32 bits
+#if arch(arm) // 32 tuple elements
             case 16: set.__fds_bits.16 = set.__fds_bits.16 | mask
             case 17: set.__fds_bits.17 = set.__fds_bits.17 | mask
             case 18: set.__fds_bits.18 = set.__fds_bits.18 | mask
@@ -77,7 +79,7 @@ internal enum FD {
             case 29: set.__fds_bits.29 = set.__fds_bits.29 | mask
             case 30: set.__fds_bits.30 = set.__fds_bits.30 | mask
             case 31: set.__fds_bits.31 = set.__fds_bits.31 | mask
-            #endif
+#endif
             default: break
         }
     }
@@ -91,14 +93,16 @@ internal enum FD {
     ///
     internal static func clr(_ fd: Int32, set: inout fd_set) {
         // see https://github.com/Kitura/BlueSocket/issues/10
-        #if arch(arm) // 32 bits
-        let intOffset = Int(fd / 32)
-        let bitOffset = Int(fd % 32)
-        #else // 16 bits
-        let intOffset = Int(fd / 16)
-        let bitOffset = Int(fd % 16)
-        #endif
-        let mask = Int(~(1 &<< bitOffset))
+#if arch(arm)
+        let tupleElementCount = 32
+#else
+        let tupleElementCount = 16
+#endif
+        let fdsMaskBitCount = 8 * MemoryLayout<fd_set>.size / tupleElementCount
+
+        let intOffset = Int(fd) / fdsMaskBitCount
+        let bitOffset = Int(fd) % fdsMaskBitCount
+        let mask = ~(1 &<< bitOffset)
         switch intOffset {
             case 0: set.__fds_bits.0 = set.__fds_bits.0 & mask
             case 1: set.__fds_bits.1 = set.__fds_bits.1 & mask
@@ -116,7 +120,7 @@ internal enum FD {
             case 13: set.__fds_bits.13 = set.__fds_bits.13 & mask
             case 14: set.__fds_bits.14 = set.__fds_bits.14 & mask
             case 15: set.__fds_bits.15 = set.__fds_bits.15 & mask
-            #if arch(arm) // 32 bits
+#if arch(arm) // 32 tuple elements
             case 16: set.__fds_bits.16 = set.__fds_bits.16 & mask
             case 17: set.__fds_bits.17 = set.__fds_bits.17 & mask
             case 18: set.__fds_bits.18 = set.__fds_bits.18 & mask
@@ -133,7 +137,7 @@ internal enum FD {
             case 29: set.__fds_bits.29 = set.__fds_bits.29 & mask
             case 30: set.__fds_bits.30 = set.__fds_bits.30 & mask
             case 31: set.__fds_bits.31 = set.__fds_bits.31 & mask
-            #endif
+#endif
             default: break
         }
     }
@@ -147,14 +151,16 @@ internal enum FD {
     ///
     internal static func isSet(_ fd: Int32, set: inout fd_set) -> Bool {
         // see https://github.com/Kitura/BlueSocket/issues/10
-        #if arch(arm) // 32 bits
-        let intOffset = Int(fd / 32)
-        let bitOffset = Int(fd % 32)
-        #else // 16 bits
-        let intOffset = Int(fd / 16)
-        let bitOffset = Int(fd % 16)
-        #endif
-        let mask = Int(1 &<< bitOffset)
+#if arch(arm)
+        let tupleElementCount = 32
+#else
+        let tupleElementCount = 16
+#endif
+        let fdsMaskBitCount = 8 * MemoryLayout<fd_set>.size / tupleElementCount
+
+        let intOffset = Int(fd) / fdsMaskBitCount
+        let bitOffset = Int(fd) % fdsMaskBitCount
+        let mask = 1 &<< bitOffset
         switch intOffset {
             case 0: return set.__fds_bits.0 & mask != 0
             case 1: return set.__fds_bits.1 & mask != 0
@@ -172,7 +178,7 @@ internal enum FD {
             case 13: return set.__fds_bits.13 & mask != 0
             case 14: return set.__fds_bits.14 & mask != 0
             case 15: return set.__fds_bits.15 & mask != 0
-            #if arch(arm) // 32 bits
+#if arch(arm) // 32 tuple elements
             case 16: return set.__fds_bits.16 & mask != 0
             case 17: return set.__fds_bits.17 & mask != 0
             case 18: return set.__fds_bits.18 & mask != 0
@@ -189,15 +195,15 @@ internal enum FD {
             case 29: return set.__fds_bits.29 & mask != 0
             case 30: return set.__fds_bits.30 & mask != 0
             case 31: return set.__fds_bits.31 & mask != 0
-            #endif
+#endif
             default: return false
         }
     }
 
-#else
+#else   // Darwin
 
     /// Replacement for FD_ZERO macro.
-    /// 
+    ///
     /// - Parameter set: A pointer to a fd_set structure.
     ///
     /// - Returns: The set that is opinted at is filled with all zero's.
@@ -216,15 +222,12 @@ internal enum FD {
     /// - Note: If you receive an EXC_BAD_INSTRUCTION at the mask statement, then most likely the socket was already closed.
     ///
     internal static func set(_ fd: Int32, set: inout fd_set) {
-        // see https://github.com/Kitura/BlueSocket/issues/10
-        #if arch(arm) // 32 bits
-        let intOffset = Int32(fd / 32)
-        let bitOffset = Int32(fd % 32)
-        #else // 16 bits
-        let intOffset = Int(fd / 16)
-        let bitOffset = Int(fd % 16)
-        #endif
-        let mask = Int32(1 &<< bitOffset)
+        let tupleElementCount = 32
+        let fdsMaskBitCount = 8 * MemoryLayout<fd_set>.size / tupleElementCount
+
+        let intOffset = Int(fd) / fdsMaskBitCount
+        let bitOffset = Int(fd) % fdsMaskBitCount
+        let mask = Int32(1) &<< bitOffset
         switch intOffset {
             case 0: set.fds_bits.0 = set.fds_bits.0 | mask
             case 1: set.fds_bits.1 = set.fds_bits.1 | mask
@@ -242,7 +245,6 @@ internal enum FD {
             case 13: set.fds_bits.13 = set.fds_bits.13 | mask
             case 14: set.fds_bits.14 = set.fds_bits.14 | mask
             case 15: set.fds_bits.15 = set.fds_bits.15 | mask
-            #if arch(arm) // 32 bits
             case 16: set.fds_bits.16 = set.fds_bits.16 | mask
             case 17: set.fds_bits.17 = set.fds_bits.17 | mask
             case 18: set.fds_bits.18 = set.fds_bits.18 | mask
@@ -259,7 +261,6 @@ internal enum FD {
             case 29: set.fds_bits.29 = set.fds_bits.29 | mask
             case 30: set.fds_bits.30 = set.fds_bits.30 | mask
             case 31: set.fds_bits.31 = set.fds_bits.31 | mask
-            #endif
             default: break
         }
     }
@@ -272,15 +273,12 @@ internal enum FD {
     /// - Returns: The given set is updated in place, with the bit at offset 'fd' cleared to 0.
     ///
     internal static func clr(_ fd: Int32, set: inout fd_set) {
-        // see https://github.com/Kitura/BlueSocket/issues/10
-        #if arch(arm) // 32 bits
-        let intOffset = Int32(fd / 32)
-        let bitOffset = Int32(fd % 32)
-        #else // 16 bits
-        let intOffset = Int(fd / 16)
-        let bitOffset = Int(fd % 16)
-        #endif
-        let mask = Int32(~(1 &<< bitOffset))
+        let tupleElementCount = 32
+        let fdsMaskBitCount = 8 * MemoryLayout<fd_set>.size / tupleElementCount
+
+        let intOffset = Int(fd) / fdsMaskBitCount
+        let bitOffset = Int(fd) % fdsMaskBitCount
+        let mask = ~(Int32(1) &<< bitOffset)
         switch intOffset {
             case 0: set.fds_bits.0 = set.fds_bits.0 & mask
             case 1: set.fds_bits.1 = set.fds_bits.1 & mask
@@ -298,7 +296,6 @@ internal enum FD {
             case 13: set.fds_bits.13 = set.fds_bits.13 & mask
             case 14: set.fds_bits.14 = set.fds_bits.14 & mask
             case 15: set.fds_bits.15 = set.fds_bits.15 & mask
-            #if arch(arm) // 32 bits
             case 16: set.fds_bits.16 = set.fds_bits.16 & mask
             case 17: set.fds_bits.17 = set.fds_bits.17 & mask
             case 18: set.fds_bits.18 = set.fds_bits.18 & mask
@@ -315,7 +312,6 @@ internal enum FD {
             case 29: set.fds_bits.29 = set.fds_bits.29 & mask
             case 30: set.fds_bits.30 = set.fds_bits.30 & mask
             case 31: set.fds_bits.31 = set.fds_bits.31 & mask
-            #endif
             default: break
         }
     }
@@ -328,15 +324,12 @@ internal enum FD {
     /// - Returns: 'true' if the bit at offset 'fd' is 1, 'false' otherwise.
     ///
     internal static func isSet(_ fd: Int32, set: inout fd_set) -> Bool {
-        // see https://github.com/Kitura/BlueSocket/issues/10
-        #if arch(arm) // 32 bits
-        let intOffset = Int32(fd / 32)
-        let bitOffset = Int32(fd % 32)
-        #else // 16 bits
-        let intOffset = Int(fd / 16)
-        let bitOffset = Int(fd % 16)
-        #endif
-        let mask = Int32(1 &<< bitOffset)
+        let tupleElementCount = 32
+        let fdsMaskBitCount = 8 * MemoryLayout<fd_set>.size / tupleElementCount
+
+        let intOffset = Int(fd) / fdsMaskBitCount
+        let bitOffset = Int(fd) % fdsMaskBitCount
+        let mask = Int32(1) &<< bitOffset
         switch intOffset {
             case 0: return set.fds_bits.0 & mask != 0
             case 1: return set.fds_bits.1 & mask != 0
@@ -354,7 +347,6 @@ internal enum FD {
             case 13: return set.fds_bits.13 & mask != 0
             case 14: return set.fds_bits.14 & mask != 0
             case 15: return set.fds_bits.15 & mask != 0
-            #if arch(arm) // 32 bits
             case 16: return set.fds_bits.16 & mask != 0
             case 17: return set.fds_bits.17 & mask != 0
             case 18: return set.fds_bits.18 & mask != 0
@@ -371,7 +363,6 @@ internal enum FD {
             case 29: return set.fds_bits.29 & mask != 0
             case 30: return set.fds_bits.30 & mask != 0
             case 31: return set.fds_bits.31 & mask != 0
-            #endif
             default: return false
         }
     }
