@@ -6,28 +6,39 @@ For in depth information: [DNS Service Discovery Programming Guide](https://deve
 
 ### For example, to browse for a service:
 ````
-#if os(macOS)
-    import dns_sd
+import dns_sd
+import Foundation
 
-    enum BrowseError: Error { case didNotSearch }
-    typealias BrowseCompletion = (Result<Set<DNSService.LocatedService>, BrowseError>) -> Void
-
-    func browseServices(ofType type: String = "_http._tcp", inDomain domain: String = "", completion: @escaping BrowseCompletion) {
-        let result = DNSService.browseServices(ofType: type, inDomain: domain,
-            errorCallback: { error in
-                completion(Result.failure(.didNotSearch))
-            },
-            serviceCallback: { service, locatedService in
-                if !locatedService.flags.contains(.moreComing) {
-                    service.stop()
-                    completion(Result.success(self.locatedServices))  // return the last service
-                }
-            })
+func browseServices(ofType type: String, inDomain domain: String? = nil, interfaceIndex: UInt32 = 0) async throws -> Set<DNSService.LocatedService> {
+    try await withCheckedThrowingContinuation { continuation in
+        var locatedServices = Set<DNSService.LocatedService>()
+        let result = DNSService.browseServices(ofType: type, inDomain: domain, interfaceIndex: interfaceIndex,
+                errorCallback: { error in
+                    continuation.resume(throwing: error)
+                },
+                serviceCallback: { service, locatedService in
+                    locatedServices.insert(locatedService)
+                    if !locatedService.flags.contains(.moreComing) {
+                        service.stop()
+                        continuation.resume(returning: locatedServices)  // return after receiving the last service
+                    }
+                })
 
         if case .failure(let error) = result {
-            completion(Result.failure(.didNotSearch))
+            continuation.resume(throwing: error)
         }
     }
+}
+
+print("Scanning...")
+
+Task {
+    let services = try await browseServices(ofType: "_http._tcp")
+    print(services)
+    exit(0)
+}
+
+RunLoop.current.run()
 ````
 
 ### Linux preconditions:
