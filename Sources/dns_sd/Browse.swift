@@ -33,6 +33,8 @@ extension DNSService {
     }
 
     public static func browseServices(ofType type: String, inDomain domain: String? = nil, interfaceIndex: UInt32 = 0, errorCallback: @escaping ErrorCallback, serviceCallback: @escaping DNSService.BrowseCallback) -> DNSServiceResult {
+        DNSService.disableExternalWarnings()
+
         var reference: DNSServiceRef?
         let identifier = DNSService.identifier()
         let error = DNSServiceBrowse(&reference, 0, interfaceIndex, type, domain, dnsServiceBrowseReply, identifier)

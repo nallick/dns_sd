@@ -37,6 +37,8 @@ extension DNSService {
     }
 
     public static func queryRecord(fullName: String, flags: Flags = [], interfaceIndex: UInt32 = 0, resourceRecordType: ServiceType, resourceRecordClass: ServiceClass = .in, errorCallback: @escaping ErrorCallback, serviceCallback: @escaping DNSService.QueryRecordCallback) -> DNSServiceResult {
+        DNSService.disableExternalWarnings()
+
         var reference: DNSServiceRef?
         let identifier = DNSService.identifier()
         let error = DNSServiceQueryRecord(&reference, flags.rawValue, interfaceIndex, fullName, resourceRecordType.rawValue, resourceRecordClass.rawValue, dnsServiceQueryRecordReply, identifier)

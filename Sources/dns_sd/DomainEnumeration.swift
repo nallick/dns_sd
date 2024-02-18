@@ -29,6 +29,8 @@ extension DNSService {
     }
 
     public static func enumerateDomains(flags: Flags, interfaceIndex: UInt32 = 0, errorCallback: @escaping ErrorCallback, serviceCallback: @escaping DNSService.DomainEnumerationCallback) -> DNSServiceResult {
+        DNSService.disableExternalWarnings()
+
         var reference: DNSServiceRef?
         let identifier = DNSService.identifier()
         let error = DNSServiceEnumerateDomains(&reference, flags.rawValue, interfaceIndex, dnsServiceDomainEnumReply, identifier)

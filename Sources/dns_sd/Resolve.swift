@@ -39,6 +39,8 @@ extension DNSService {
     }
 
     public static func resolveService(named name: String, ofType type: String, inDomain domain: String, interfaceIndex: UInt32, errorCallback: @escaping ErrorCallback, serviceCallback: @escaping DNSService.ResolveCallback) -> DNSServiceResult {
+        DNSService.disableExternalWarnings()
+
         var reference: DNSServiceRef?
         let identifier = DNSService.identifier()
         let error = DNSServiceResolve(&reference, 0, interfaceIndex, name, type, domain, dnsServiceResolveReply, identifier)

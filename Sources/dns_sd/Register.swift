@@ -31,6 +31,8 @@ extension DNSService {
     }
 
     public static func registerService(named name: String? = nil, ofType type: String, inDomain domain: String? = nil, host: String? = nil, port: UInt16, txtRecord: TXTRecord? = nil, flags: Flags = [], interfaceIndex: UInt32 = 0, errorCallback: @escaping ErrorCallback, serviceCallback: @escaping DNSService.DomainRegisterCallback) -> DNSServiceResult {
+        DNSService.disableExternalWarnings()
+
         var reference: DNSServiceRef?
         let identifier = DNSService.identifier()
         let networkPort = ((port & 0x00FF) << 8) | ((port & 0xFF00) >> 8)
